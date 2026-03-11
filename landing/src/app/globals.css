@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #0d0f14;
+  color: #e4e6f0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(76, 155, 232, 0.25);
+  color: #fff;
+}
+
+/* Thin custom scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #0d0f14; }
+::-webkit-scrollbar-thumb { background: #2a2d3a; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #4c9be8; }
+
+/* ── Hero word-by-word glitch entrance ─────────────────── */
+
+.fade-in {
+  animation: fadeInGlitch 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.fade-in-subtitle {
+  animation: fadeInUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes fadeInGlitch {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) skewY(5deg);
+    filter: blur(8px);
+  }
+  55% {
+    filter: blur(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) skewY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* ── Scroll indicator button ────────────────────────────── */
+
+.explore-btn {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  animation: fadeInBtn 0.9s ease both;
+  transition: color 0.2s;
+}
+
+.explore-btn:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.explore-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arrow-svg {
+  animation: bounceArrow 1.8s ease-in-out infinite;
+}
+
+@keyframes fadeInBtn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes bounceArrow {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(6px); }
+}

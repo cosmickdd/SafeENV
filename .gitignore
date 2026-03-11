@@ -1,0 +1,42 @@
+# ── Python ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+ENV/
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ── pytest / coverage ───────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ── Next.js / Node ──────────────────────────────────────
+landing/.next/
+landing/node_modules/
+landing/.env
+landing/.env.local
+landing/.env.*.local
+landing/build_log.txt
+landing/build_out.txt
+landing/tsconfig.tsbuildinfo
+
+# ── General ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log
+
+# ── VS Code ─────────────────────────────────────────────
+.vscode/

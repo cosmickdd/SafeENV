@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>safeenv — Python environment setup that just works</title>
+  <meta name="description" content="One command to create your .venv, scan imports, generate requirements.txt, and install everything. No YAML. No config. No pain." />
+  <meta property="og:title" content="safeenv" />
+  <meta property="og:description" content="Stop fighting your Python environment. Start building." />
+  <meta property="og:type" content="website" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ── Nav ─────────────────────────────────────────────── -->
+  <nav>
+    <span class="nav-logo">safeenv</span>
+    <div class="nav-links">
+      <a href="https://pypi.org/project/safeenv-tool/" target="_blank">PyPI</a>
+      <a href="https://github.com/safeenv/safeenv" target="_blank">GitHub</a>
+      <a href="https://github.com/safeenv/safeenv#-commands" target="_blank">Docs</a>
+    </div>
+  </nav>
+
+  <!-- ── Hero ────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="badge">pip install safeenv-tool</div>
+      <h1>Stop fighting your<br/><span class="accent">Python environment.</span></h1>
+      <p class="hero-sub">
+        One command to create your <code>.venv</code>, scan your imports,
+        generate <code>requirements.txt</code>, and install everything.
+        No YAML. No config. No Googling "ModuleNotFoundError fix" at 2 am.
+      </p>
+      <div class="hero-actions">
+        <a class="btn-primary" href="https://pypi.org/project/safeenv-tool/" target="_blank">Get safeenv</a>
+        <a class="btn-secondary" href="https://github.com/safeenv/safeenv" target="_blank">View on GitHub</a>
+      </div>
+      <div class="terminal-hero">
+        <div class="terminal-bar">
+          <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+          <span class="terminal-title">terminal</span>
+        </div>
+        <pre class="terminal-body"><span class="t-dim">$</span> <span class="t-cmd">pip install safeenv-tool</span>
+
+<span class="t-dim">$</span> <span class="t-cmd">safeenv setup</span>
+
+  <span class="t-success">✓</span>  Python version compatible: <span class="t-val">3.11</span>
+  <span class="t-success">✓</span>  Virtual environment created: <span class="t-val">.venv</span>
+
+  Installing dependencies...
+
+  <span class="t-success">✓</span>  Flask installed
+  <span class="t-success">✓</span>  numpy installed
+  <span class="t-success">✓</span>  requests installed
+
+  <span class="t-green">Project setup complete.</span>
+  <span class="t-saffron">JAI SHREE RAM 🙏</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Why ─────────────────────────────────────────────── -->
+  <section class="section why">
+    <div class="container">
+      <h2>Every Python developer has been here</h2>
+      <div class="error-box">
+        <span class="t-dim">$</span> python app.py<br/>
+        <span class="t-error">ModuleNotFoundError: No module named 'flask'</span>
+      </div>
+      <p class="why-desc">
+        You clone a repo, follow the README word for word, and it <em>still</em> doesn't run.
+        safeenv fixes this whole class of problem with a single command.
+      </p>
+      <div class="compare">
+        <div class="compare-col bad">
+          <h3>❌ Without safeenv</h3>
+          <ul>
+            <li>python -m venv .venv</li>
+            <li>source .venv/bin/activate (or Scripts\activate on Windows…)</li>
+            <li>pip install -r requirements.txt (if it even exists)</li>
+            <li>ModuleNotFoundError again</li>
+            <li>Google. Stack Overflow. Give up.</li>
+          </ul>
+        </div>
+        <div class="compare-col good">
+          <h3>✅ With safeenv</h3>
+          <ul>
+            <li><code>safeenv setup</code></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Commands ────────────────────────────────────────── -->
+  <section class="section commands">
+    <div class="container">
+      <h2>Five commands. That's the whole thing.</h2>
+      <div class="cmd-grid">
+
+        <div class="cmd-card">
+          <div class="cmd-name"><code>safeenv init</code></div>
+          <p>Creates a <code>.venv</code> and tells you exactly how to activate it. Running it twice on the same project does nothing — it never overwrites your environment.</p>
+        </div>
+
+        <div class="cmd-card">
+          <div class="cmd-name"><code>safeenv freeze</code></div>
+          <p>Walks every <code>.py</code> file using Python's AST parser — no code is ever executed — and writes a clean <code>requirements.txt</code> automatically. Handles 60+ import → PyPI name mismatches.</p>
+        </div>
+
+        <div class="cmd-card highlight">
+          <div class="cmd-tag">most used</div>
+          <div class="cmd-name"><code>safeenv setup</code></div>
+          <p>The one you run after cloning any project. Creates <code>.venv</code> + installs everything from <code>requirements.txt</code> in a single step.</p>
+        </div>
+
+        <div class="cmd-card">
+          <div class="cmd-name"><code>safeenv doctor</code></div>
+          <p>Read-only health check. Tells you which Python version you're on, whether <code>.venv</code> exists, whether <code>requirements.txt</code> is present, and which packages are missing. Modifies nothing.</p>
+        </div>
+
+        <div class="cmd-card">
+          <div class="cmd-name"><code>safeenv fix</code></div>
+          <p>Acts on what <code>doctor</code> found. Creates the venv if missing, installs missing packages. Think of it as auto-repair for your environment.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Import mapping ──────────────────────────────────── -->
+  <section class="section mapping">
+    <div class="container">
+      <h2>Knows what you actually mean</h2>
+      <p class="section-desc">
+        The gap between what you <code>import</code> and what you <code>pip install</code> trips up everyone.
+        safeenv handles all the common ones automatically.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>You write in code</th><th>pip install name</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>import cv2</code></td><td><code>opencv-python</code></td></tr>
+            <tr><td><code>from PIL import Image</code></td><td><code>Pillow</code></td></tr>
+            <tr><td><code>import sklearn</code></td><td><code>scikit-learn</code></td></tr>
+            <tr><td><code>from bs4 import BeautifulSoup</code></td><td><code>beautifulsoup4</code></td></tr>
+            <tr><td><code>import yaml</code></td><td><code>PyYAML</code></td></tr>
+            <tr><td><code>from dotenv import load_dotenv</code></td><td><code>python-dotenv</code></td></tr>
+            <tr><td><code>import dateutil</code></td><td><code>python-dateutil</code></td></tr>
+            <tr><td><code>import wx</code></td><td><code>wxPython</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="table-note">60+ mappings built in. Stdlib modules are automatically excluded.</p>
+    </div>
+  </section>
+
+  <!-- ── Quick start ─────────────────────────────────────── -->
+  <section class="section quickstart">
+    <div class="container narrow">
+      <h2>Get started in 30 seconds</h2>
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">1</span>
+          <div>
+            <strong>Install</strong>
+            <div class="code-line"><code>pip install safeenv-tool</code></div>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">2</span>
+          <div>
+            <strong>Go to your project</strong>
+            <div class="code-line"><code>cd my-project</code></div>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">3</span>
+          <div>
+            <strong>Run one command</strong>
+            <div class="code-line"><code>python -m safeenv setup</code></div>
+          </div>
+        </div>
+      </div>
+      <p class="qs-note">
+        On Windows? Use <code>python -m safeenv</code> — works everywhere regardless of PATH.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── CTA ─────────────────────────────────────────────── -->
+  <section class="section cta">
+    <div class="container narrow center">
+      <h2>Ready to stop fighting your environment?</h2>
+      <p>Free. Open source. MIT licensed. Works on Windows, Mac, and Linux.</p>
+      <div class="hero-actions">
+        <a class="btn-primary" href="https://pypi.org/project/safeenv-tool/" target="_blank">Install from PyPI</a>
+        <a class="btn-secondary" href="https://github.com/safeenv/safeenv" target="_blank">Star on GitHub ⭐</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ──────────────────────────────────────────── -->
+  <footer>
+    <p>
+      Built with ❤️ by <a href="https://github.com/cosmickdd" target="_blank">cosmickdd</a>
+      &nbsp;·&nbsp;
+      <a href="https://github.com/safeenv/safeenv" target="_blank">GitHub</a>
+      &nbsp;·&nbsp;
+      <a href="https://pypi.org/project/safeenv-tool/" target="_blank">PyPI</a>
+      &nbsp;·&nbsp;
+      MIT License
+    </p>
+  </footer>
+
+</body>
+</html>
