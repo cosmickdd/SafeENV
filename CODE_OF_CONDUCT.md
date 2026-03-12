@@ -28,7 +28,7 @@ Treat everyone with respect. This community is open to people of all backgrounds
 
 ## Reporting
 
-If something happens that shouldn't have, email **hello@safeenv.dev**. Reports are handled privately and taken seriously.
+If something happens that shouldn't have, email **cosmickdd@gmail.com**. Reports are handled privately and taken seriously.
 
 ---
 
