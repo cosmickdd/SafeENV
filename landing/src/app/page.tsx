@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useEffect, useRef } from "react";
 
 /* ─────────────────────────── DATA ─────────────────────────── */
@@ -14,12 +14,12 @@ const commands = [
     highlight: false,
   },
   {
-    name: "freeze",
-    full: "safeenv freeze",
-    desc: "Walks every .py file using Python's AST parser — no code executed — and writes a clean requirements.txt automatically.",
-    detail: "Handles 60+ import → PyPI name mismatches.",
-    icon: "❄",
-    color: "#06b6d4",
+    name: "run",
+    full: "safeenv run",
+    desc: "Runs any script or Python module using the isolated virtual environment compiler without manual activation.",
+    detail: "No activation required.",
+    icon: "⚡",
+    color: "#a855f7",
     highlight: false,
   },
   {
@@ -30,6 +30,24 @@ const commands = [
     icon: "◈",
     color: "#e53535",
     highlight: true,
+  },
+  {
+    name: "freeze",
+    full: "safeenv freeze",
+    desc: "Walks every .py file using Python's AST parser — no code executed — and writes a clean requirements.txt automatically. Added --pin support in v2.",
+    detail: "Pins exact installed versions.",
+    icon: "❄",
+    color: "#06b6d4",
+    highlight: false,
+  },
+  {
+    name: "scan",
+    full: "safeenv scan",
+    desc: "AST scans files for environment variables (os.environ, config) and automatically creates a .env.example template.",
+    detail: "Zero execution, highly secure.",
+    icon: "🔍",
+    color: "#06b6d4",
+    highlight: false,
   },
   {
     name: "doctor",
@@ -47,6 +65,15 @@ const commands = [
     detail: "The cure to doctor's diagnosis.",
     icon: "⬟",
     color: "#f59e0b",
+    highlight: false,
+  },
+  {
+    name: "clean",
+    full: "safeenv clean",
+    desc: "Safely nukes .venv, cache folders (__pycache__, pytest, ruff) to resolve corrupted environments, with an optional auto-rebuild.",
+    detail: "Nuke and rebuild instantly.",
+    icon: "🧹",
+    color: "#f43f5e",
     highlight: false,
   },
 ];
@@ -774,6 +801,10 @@ export default function SafeenvPage() {
   const rafRef = useRef<number>(0);
   const mouseRef = useRef({ x: -100, y: -100 });
 
+  // v2.0 additions
+  const [showDocs, setShowDocs] = useState(false);
+  const [activeDocSection, setActiveDocSection] = useState("start");
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -804,10 +835,365 @@ export default function SafeenvPage() {
     };
   }, []);
 
+  // Lock body scroll when docs overlay is open
+  useEffect(() => {
+    if (showDocs) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [showDocs]);
+
   const copy = () => {
     navigator.clipboard?.writeText("pip install safeenv-tool").catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const renderDocContent = () => {
+    switch (activeDocSection) {
+      case "start":
+        return (
+          <div className="fade-in-subtitle" style={{ animationDuration: "0.4s" }}>
+            <div style={{ display: "inline-flex", background: "rgba(229,53,53,0.1)", color: "var(--accent)", border: "1px solid rgba(229,53,53,0.2)", borderRadius: 100, padding: "4px 12px", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>Getting Started</div>
+            <h2 style={{ fontFamily: "var(--display)", fontSize: "2.5rem", fontWeight: 800, letterSpacing: "-0.03em", color: "white", marginBottom: 16 }}>Quick Start Guide</h2>
+            <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, fontWeight: 300, marginBottom: 32, maxWidth: 640 }}>
+              safeenv is zero-config, single-binary capable, and handles virtual environments, dependency scanning, and running scripts without manual activation.
+            </p>
+
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16, color: "white" }}>1. Installation</h3>
+            <div style={{
+              background: "rgba(0,0,0,0.45)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              borderRadius: 12,
+              padding: "16px 20px",
+              fontFamily: "var(--mono)",
+              fontSize: 13,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 36,
+            }}>
+              <span style={{ color: "#10b981" }}><span style={{ color: "rgba(255,255,255,0.3)" }}>$</span> pip install safeenv-tool</span>
+              <button 
+                onClick={() => { navigator.clipboard.writeText("pip install safeenv-tool"); }}
+                style={{
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 6,
+                  padding: "4px 12px",
+                  color: "rgba(255,255,255,0.6)",
+                  fontSize: 11,
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.color = "white"; e.currentTarget.style.borderColor = "rgba(229,53,53,0.3)"; }}
+                onMouseOut={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.6)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+              >
+                Copy
+              </button>
+            </div>
+
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16, color: "white" }}>2. Three Steps to Setup & Run</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {[
+                { step: "01", title: "Initialize the virtual environment", cmd: "safeenv init", desc: "Creates .venv safely. Running it on an existing project is non-destructive." },
+                { step: "02", title: "Scan code & install packages", cmd: "safeenv setup", desc: "Reads all Python files (using AST, no code execution), generates requirements.txt and installs packages." },
+                { step: "03", title: "Run without activation", cmd: "safeenv run app.py", desc: "Executes your scripts directly with the .venv Python compiler. Platform independent." }
+              ].map(item => (
+                <div key={item.step} style={{
+                  display: "flex",
+                  gap: 20,
+                  background: "rgba(255,255,255,0.015)",
+                  border: "1px solid rgba(255,255,255,0.04)",
+                  borderRadius: 14,
+                  padding: 24,
+                }}>
+                  <div style={{ fontSize: 26, fontWeight: 900, color: "var(--accent)" }}>{item.step}</div>
+                  <div>
+                    <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6, color: "white" }}>{item.title}</h4>
+                    <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, marginBottom: 14, fontWeight: 300 }}>{item.desc}</p>
+                    <code style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: 12.5,
+                      background: "black",
+                      padding: "6px 14px",
+                      borderRadius: 8,
+                      color: "rgba(255,255,255,0.8)",
+                      display: "inline-block",
+                      border: "1px solid rgba(255,255,255,0.06)"
+                    }}><span style={{ color: "var(--accent)", marginRight: 6 }}>$</span>{item.cmd}</code>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case "why-v2":
+        return (
+          <div className="fade-in-subtitle" style={{ animationDuration: "0.4s" }}>
+            <div style={{ display: "inline-flex", background: "rgba(229,53,53,0.1)", color: "var(--accent)", border: "1px solid rgba(229,53,53,0.2)", borderRadius: 100, padding: "4px 12px", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>Core Design</div>
+            <h2 style={{ fontFamily: "var(--display)", fontSize: "2.5rem", fontWeight: 800, letterSpacing: "-0.03em", color: "white", marginBottom: 16 }}>Why safeenv?</h2>
+            <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, fontWeight: 300, marginBottom: 32, maxWidth: 640 }}>
+              Python environment management shouldn&apos;t require learning Docker, Poetry, or Conda. safeenv focuses on developer experience and zero configuration.
+            </p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 20, marginBottom: 40 }}>
+              {[
+                { title: "Zero Configuration", desc: "No complex pyproject.toml schemas, yaml declarations, or configurations. It scans your actual Python code to find dependencies." },
+                { title: "Non-Destructive & Safe", desc: "Unlike raw pip operations, safeenv does not mutate system files or overwrite your virtual environment unless explicitly clean-rebuilding." },
+                { title: "No Code Execution", desc: "Dependency scanning is performed strictly using Python's Abstract Syntax Trees (AST). Your codebase is never executed during scans." },
+                { title: "Platform Independent", desc: "Provides unified commands that act seamlessly across Windows (PowerShell/CMD), macOS (zsh/bash), and Linux environments." }
+              ].map((item, idx) => (
+                <div key={idx} style={{
+                  background: "rgba(255,255,255,0.01)",
+                  border: "1px solid rgba(255,255,255,0.04)",
+                  borderRadius: 14,
+                  padding: 24,
+                }}>
+                  <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10, color: "white" }}>{item.title}</h4>
+                  <p style={{ color: "var(--muted)", fontSize: 13.5, lineHeight: 1.6, fontWeight: 300 }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case "v2-overview":
+        return (
+          <div className="fade-in-subtitle" style={{ animationDuration: "0.4s" }}>
+            <div style={{ display: "inline-flex", background: "rgba(16,185,129,0.1)", color: "#10b981", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 100, padding: "4px 12px", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>Version 2.0 release</div>
+            <h2 style={{ fontFamily: "var(--display)", fontSize: "2.5rem", fontWeight: 800, letterSpacing: "-0.03em", color: "white", marginBottom: 16 }}>The &quot;Actually Useful&quot; Upgrade</h2>
+            <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, fontWeight: 300, marginBottom: 32, maxWidth: 640 }}>
+              Version 0.2.0 adds powerful CLI commands and system health enhancements to fully close the loop of the developer environment lifecycle.
+            </p>
+
+            <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 40, border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, overflow: "hidden" }}>
+              <thead>
+                <tr style={{ background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  <th style={{ padding: "14px 20px", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", textAlign: "left" }}>Feature</th>
+                  <th style={{ padding: "14px 20px", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", textAlign: "left" }}>v0.1.x Capabilities</th>
+                  <th style={{ padding: "14px 20px", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "white", textAlign: "left" }}>v0.2.0 Upgrade (New!)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { name: "Running Code", v1: "Manual environment activation required", v2: "safeenv run - execute code without venv activation" },
+                  { name: "Resetting Env", v1: "Manual directory deletion of .venv", v2: "safeenv clean - nuke .venv, cache & rebuild instantly" },
+                  { name: "Env Variables", v1: "No awareness of secrets/dotenv variables", v2: "safeenv scan - auto-detect os.environ & write .env.example" },
+                  { name: "Locking Versions", v1: "Generates bare requirements (e.g. Flask)", v2: "safeenv freeze --pin - pins exact installed versions" },
+                  { name: "Compatibility", v1: "Assumed Python 3.7+ compatibility", v2: "Doctor validates .python-version constraints" },
+                  { name: "Git Safety", v1: "Venv folder easily committed by accident", v2: "Doctor/Fix automatically excludes .venv in .gitignore" }
+                ].map((row, idx) => (
+                  <tr key={idx} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <td style={{ padding: "16px 20px", fontSize: 14, fontWeight: 600, color: "white" }}>{row.name}</td>
+                    <td style={{ padding: "16px 20px", fontSize: 13.5, color: "rgba(255,255,255,0.4)" }}>{row.v1}</td>
+                    <td style={{ padding: "16px 20px", fontSize: 13.5, color: "#10b981", fontWeight: 500 }}>{row.v2}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+
+      case "v2-pinning":
+        return (
+          <div className="fade-in-subtitle" style={{ animationDuration: "0.4s" }}>
+            <div style={{ display: "inline-flex", background: "rgba(229,53,53,0.1)", color: "var(--accent)", border: "1px solid rgba(229,53,53,0.2)", borderRadius: 100, padding: "4px 12px", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>Upgraded Freeze</div>
+            <h2 style={{ fontFamily: "var(--display)", fontSize: "2.5rem", fontWeight: 800, letterSpacing: "-0.03em", color: "white", marginBottom: 16 }}>Deterministic Dependency Pinning</h2>
+            <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, fontWeight: 300, marginBottom: 28 }}>
+              Unpinned dependencies lead to broken environments when packages update. `safeenv freeze --pin` reads your installed packages inside `.venv` via `pip list` in real time to lock exact versions.
+            </p>
+
+            <div style={{ background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "20px 24px", fontFamily: "var(--mono)", fontSize: 13, lineHeight: 1.7, marginBottom: 24 }}>
+              <div style={{ color: "rgba(255,255,255,0.2)", marginBottom: 8 }}># Run freeze with the --pin or -p flag</div>
+              <div><span style={{ color: "var(--accent)" }}>$</span> safeenv freeze --pin</div>
+              <div style={{ color: "rgba(255,255,255,0.3)", marginTop: 12 }}>Scanning project for imports...</div>
+              <div style={{ color: "#10b981" }}>✓ Flask==3.0.3</div>
+              <div style={{ color: "#10b981" }}>✓ requests==2.32.3</div>
+              <div style={{ color: "#10b981" }}>✓ Pillow==10.3.0</div>
+              <div style={{ color: "rgba(255,255,255,0.3)", marginTop: 12 }}>✓ requirements.txt generated with 3 packages pinned.</div>
+            </div>
+          </div>
+        );
+
+      case "v2-env-vars":
+        return (
+          <div className="fade-in-subtitle" style={{ animationDuration: "0.4s" }}>
+            <div style={{ display: "inline-flex", background: "rgba(229,53,53,0.1)", color: "var(--accent)", border: "1px solid rgba(229,53,53,0.2)", borderRadius: 100, padding: "4px 12px", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>AST dotenv scanner</div>
+            <h2 style={{ fontFamily: "var(--display)", fontSize: "2.5rem", fontWeight: 800, letterSpacing: "-0.03em", color: "white", marginBottom: 16 }}>Environment Variables Scanner</h2>
+            <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, fontWeight: 300, marginBottom: 28 }}>
+              Tired of new contributors having to dig through your code to find which environment variables are needed? safeenv scans your code for `os.environ`, `os.getenv`, and python-decouple `config()` imports, creating an auto-formatted `.env.example` file.
+            </p>
+
+            <div style={{ background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "20px 24px", fontFamily: "var(--mono)", fontSize: 13, lineHeight: 1.7, marginBottom: 24 }}>
+              <div><span style={{ color: "var(--accent)" }}>$</span> safeenv scan</div>
+              <div style={{ color: "rgba(255,255,255,0.3)", marginTop: 8 }}>Scanning for environment variables...</div>
+              <div style={{ color: "rgba(255,255,255,0.5)", marginTop: 6 }}>Found 3 environment variables:</div>
+              <div style={{ color: "#06b6d4", paddingLeft: 12 }}>$ DATABASE_URL</div>
+              <div style={{ color: "#06b6d4", paddingLeft: 12 }}>$ SECRET_KEY</div>
+              <div style={{ color: "#06b6d4", paddingLeft: 12 }}>$ DEBUG</div>
+              <div style={{ color: "#10b981", marginTop: 12 }}>✓ .env.example generated — share this with contributors.</div>
+            </div>
+          </div>
+        );
+
+      case "v2-runner":
+        return (
+          <div className="fade-in-subtitle" style={{ animationDuration: "0.4s" }}>
+            <div style={{ display: "inline-flex", background: "rgba(229,53,53,0.1)", color: "var(--accent)", border: "1px solid rgba(229,53,53,0.2)", borderRadius: 100, padding: "4px 12px", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>No Activation</div>
+            <h2 style={{ fontFamily: "var(--display)", fontSize: "2.5rem", fontWeight: 800, letterSpacing: "-0.03em", color: "white", marginBottom: 16 }}>Seamless Execution Runner</h2>
+            <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, fontWeight: 300, marginBottom: 28 }}>
+              No more activation command headaches (`source .venv/bin/activate` vs `.venv\Scripts\activate.ps1`). `safeenv run` allows you to immediately execute scripts or run modules using your project&apos;s isolated environment.
+            </p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 32 }}>
+              <div style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 12, padding: 20 }}>
+                <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, color: "white" }}>1. Execute local script</h4>
+                <code style={{ fontFamily: "var(--mono)", fontSize: 12, color: "#06b6d4" }}>safeenv run app.py</code>
+                <p style={{ color: "var(--muted)", fontSize: 13, marginTop: 10, lineHeight: 1.5 }}>Runs `app.py` directly using `.venv` interpreter.</p>
+              </div>
+              <div style={{ background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 12, padding: 20 }}>
+                <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, color: "white" }}>2. Execute Python modules</h4>
+                <code style={{ fontFamily: "var(--mono)", fontSize: 12, color: "#06b6d4" }}>safeenv run -m pytest</code>
+                <p style={{ color: "var(--muted)", fontSize: 13, marginTop: 10, lineHeight: 1.5 }}>Runs modules seamlessly like `python -m pytest` inside `.venv`.</p>
+              </div>
+            </div>
+          </div>
+        );
+
+      default:
+        if (activeDocSection.startsWith("cmd-")) {
+          const cmdName = activeDocSection.replace("cmd-", "");
+          const cmdData = {
+            init: {
+              full: "safeenv init",
+              desc: "Creates a .venv virtual environment and configures correct folder setups. Completely safe to re-run on existing projects.",
+              usage: "safeenv init [--dir <path>]",
+              args: [{ name: "--dir, -d", type: "PATH", desc: "Target project directory. Defaults to the current directory." }],
+              output: ["SafeEnv Initialization", "✓ Python version detected: 3.11", "✓ Virtual environment created: .venv"]
+            },
+            run: {
+              full: "safeenv run",
+              desc: "Runs a script or module using the isolated .venv compiler — skipping manual activation.",
+              usage: "safeenv run <script.py> [args...] / safeenv run -m <module> [args...]",
+              args: [
+                { name: "<script.py>", type: "FILE", desc: "Path to script file to run." },
+                { name: "--module, -m", type: "FLAG", desc: "Execute target script as a Python module." },
+                { name: "--dir, -d", type: "PATH", desc: "Project directory directory. Defaults to current directory." }
+              ],
+              output: ["Using .venv interpreter", "Running app.py..."]
+            },
+            setup: {
+              full: "safeenv setup",
+              desc: "One shot environment setup. Creates a virtual environment and installs all requirements.",
+              usage: "safeenv setup [--dir <path>]",
+              args: [{ name: "--dir, -d", type: "PATH", desc: "Project directory to set up." }],
+              output: ["Project Setup", "✓ Python version compatible: 3.11", "✓ Virtual environment found: .venv", "Installing dependencies...", "✓ Flask installed"]
+            },
+            freeze: {
+              full: "safeenv freeze",
+              desc: "Analyzes imports in files without executing them and writes requirements.txt.",
+              usage: "safeenv freeze [--pin] [--output <file>]",
+              args: [
+                { name: "--pin, -p", type: "FLAG", desc: "Query installed packages inside .venv and pin exact versions." },
+                { name: "--output, -o", type: "FILE", desc: "Destination file path. Defaults to requirements.txt." }
+              ],
+              output: ["Analysing Python files...", "✓ Flask==3.0.3", "✓ requirements.txt generated."]
+            },
+            scan: {
+              full: "safeenv scan",
+              desc: "Scans project code files for environment variables (AST) and generates a template env file.",
+              usage: "safeenv scan [--output <file>]",
+              args: [{ name: "--output, -o", type: "FILE", desc: "Output file path. Defaults to .env.example." }],
+              output: ["Scanning for environment variables...", "Found 2 environment variables:", "  $DATABASE_URL", "  $SECRET_KEY", "✓ .env.example generated."]
+            },
+            doctor: {
+              full: "safeenv doctor",
+              desc: "Health report audit on virtual environments, missing dependencies, gitignore, and dotenv variables.",
+              usage: "safeenv doctor",
+              args: [],
+              output: ["Project Health Report", "Python version      : 3.11", "Virtual environment : detected", "requirements.txt    : found", "Issues found:", "⚠ Missing dependency: Flask", "⚠ .gitignore doesn't contain .venv"]
+            },
+            fix: {
+              full: "safeenv fix",
+              desc: "Repairs problems found by doctor automatically (builds venv, resolves packages, excludes venv in gitignore).",
+              usage: "safeenv fix",
+              args: [],
+              output: ["Repairing environment...", "✓ Virtual environment: OK", "✓ Flask installed", "✓ .gitignore updated to exclude .venv"]
+            },
+            clean: {
+              full: "safeenv clean",
+              desc: "Safely cleans up virtual environments, cache folders (__pycache__, pytest, ruff) to resolve corrupted environments.",
+              usage: "safeenv clean [--rebuild] [--yes]",
+              args: [
+                { name: "--rebuild, -r", type: "FLAG", desc: "Trigger setup automatically to rebuild the environment after clean." },
+                { name: "--yes, -y", type: "FLAG", desc: "Skip interactive validation checks." }
+              ],
+              output: ["Clean Environment", "Will remove: .venv/", "Will remove: __pycache__/, *.pyc", "✓ .venv removed", "✓ Clean complete."]
+            }
+          }[cmdName] || { full: "", desc: "", usage: "", args: [], output: [] };
+
+          return (
+            <div className="fade-in-subtitle" style={{ animationDuration: "0.3s" }}>
+              <div style={{ display: "inline-flex", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 100, padding: "4px 12px", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>CLI COMMAND Reference</div>
+              <h2 style={{ fontFamily: "var(--display)", fontSize: "2.5rem", fontWeight: 800, letterSpacing: "-0.03em", color: "white", marginBottom: 16 }}>{cmdData.full}</h2>
+              <p style={{ color: "var(--muted)", fontSize: 16, lineHeight: 1.7, fontWeight: 300, marginBottom: 28 }}>
+                {cmdData.desc}
+              </p>
+
+              <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, color: "white" }}>Usage</h4>
+              <code style={{
+                fontFamily: "var(--mono)",
+                fontSize: 13,
+                background: "black",
+                padding: "10px 16px",
+                borderRadius: 8,
+                color: "#10b981",
+                display: "block",
+                border: "1px solid rgba(255,255,255,0.06)",
+                marginBottom: 24,
+              }}>$ {cmdData.usage}</code>
+
+              {cmdData.args.length > 0 && (
+                <>
+                  <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: "white" }}>Options & Flags</h4>
+                  <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 28, border: "1px solid rgba(255,255,255,0.04)" }}>
+                    <thead>
+                      <tr style={{ background: "rgba(255,255,255,0.01)", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                        <th style={{ padding: "10px 14px", fontSize: 11, color: "var(--accent)", textAlign: "left", fontFamily: "var(--mono)" }}>Option</th>
+                        <th style={{ padding: "10px 14px", fontSize: 11, color: "rgba(255,255,255,0.4)", textAlign: "left" }}>Type</th>
+                        <th style={{ padding: "10px 14px", fontSize: 11, color: "rgba(255,255,255,0.4)", textAlign: "left" }}>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cmdData.args.map((arg, i) => (
+                        <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                          <td style={{ padding: "12px 14px", fontSize: 12.5, color: "white", fontFamily: "var(--mono)" }}>{arg.name}</td>
+                          <td style={{ padding: "12px 14px", fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "var(--mono)" }}>{arg.type}</td>
+                          <td style={{ padding: "12px 14px", fontSize: 13, color: "var(--muted)", fontWeight: 300 }}>{arg.desc}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              )}
+
+              <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: "white" }}>Console Output Preview</h4>
+              <div style={{ background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "20px 24px", fontFamily: "var(--mono)", fontSize: 13, lineHeight: 1.7 }}>
+                {cmdData.output.map((line, i) => (
+                  <div key={i} style={{
+                    color: line.startsWith("✓") ? "#10b981" : line.startsWith("⚠") || line.startsWith("⚠") ? "#f59e0b" : "rgba(255,255,255,0.6)"
+                  }}>{line}</div>
+                ))}
+              </div>
+            </div>
+          );
+        }
+        return null;
+    }
   };
 
   return (
@@ -835,6 +1221,21 @@ export default function SafeenvPage() {
           <a href="#why" className="nav-link">Why</a>
           <a href="#commands" className="nav-link">Commands</a>
           <a href="#mappings" className="nav-link">Mappings</a>
+          <button 
+            onClick={() => { setShowDocs(true); setActiveDocSection("start"); }} 
+            className="nav-link"
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 4
+            }}
+          >
+            v0.2.0 Docs
+            <span style={{ fontSize: 8, fontWeight: 700, color: "white", background: "var(--accent)", padding: "1px 4px", borderRadius: 3 }}>NEW</span>
+          </button>
           <a href="https://github.com/cosmickdd/safeenv" target="_blank" rel="noopener noreferrer" className="nav-link">GitHub</a>
           <a href="https://pypi.org/project/safeenv-tool/" target="_blank" rel="noopener noreferrer" className="nav-btn">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -853,12 +1254,31 @@ export default function SafeenvPage() {
         </div>
 
         <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <div className="badge anim-0">
+          {/* INTERACTIVE TOGGLE TO V2 DOCS */}
+          <div 
+            className="badge anim-0"
+            onClick={() => { setShowDocs(true); setActiveDocSection("v2-overview"); }}
+            style={{ 
+              cursor: "pointer", 
+              transition: "all 0.25s cubic-bezier(0.16,1,0.3,1)"
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = "translateY(-1px) scale(1.03)";
+              e.currentTarget.style.borderColor = "rgba(229,53,53,0.5)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = "translateY(0) scale(1)";
+              e.currentTarget.style.borderColor = "rgba(229,53,53,0.28)";
+            }}
+          >
             <div className="badge-tag">
-              <div className="badge-dot" />
-              v0.1.2
+              <div className="badge-dot" style={{ background: "#10b981", boxShadow: "0 0 8px #10b981" }} />
+              v0.2.0
             </div>
-            <div className="badge-label">Python environment, automated</div>
+            <div className="badge-label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span>Python environment, automated</span>
+              <span style={{ fontSize: 8, fontWeight: 700, color: "white", background: "var(--accent)", padding: "1px 6px", borderRadius: 4, textTransform: "uppercase" }}>New release!</span>
+            </div>
           </div>
 
           <h1 className="hero-title anim-1">
@@ -871,10 +1291,10 @@ export default function SafeenvPage() {
           </p>
 
           <div className="hero-actions anim-3">
-            <a href="https://pypi.org/project/safeenv-tool/" target="_blank" rel="noopener noreferrer" className="btn-primary">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Install from PyPI
-            </a>
+            <button onClick={() => { setShowDocs(true); setActiveDocSection("start"); }} className="btn-primary" style={{ border: "none", cursor: "pointer" }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+              Interactive v2 Docs
+            </button>
             <a href="https://github.com/cosmickdd/safeenv" target="_blank" rel="noopener noreferrer" className="btn-ghost">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
               Star on GitHub
@@ -897,7 +1317,7 @@ export default function SafeenvPage() {
       {/* ── STATS ── */}
       <div className="stats-bar">
         {[
-          { v: "5", l: "Total commands" },
+          { v: "8", l: "Total commands" },
           { v: "60+", l: "Import mappings" },
           { v: "0", l: "Config files needed" },
           { v: "~2s", l: "Average setup time" },
@@ -1002,8 +1422,8 @@ export default function SafeenvPage() {
           <Reveal>
             <Eyebrow>Commands</Eyebrow>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "end" }}>
-              <h2 className="section-title" style={{ marginBottom: 0 }}>Five commands.<br /><em>The whole API.</em></h2>
-              <p className="section-sub">No config files. No YAML. No plugins. Each command does exactly one thing and does it with precision.</p>
+              <h2 className="section-title" style={{ marginBottom: 0 }}>All commands.<br /><em>Fully loaded.</em></h2>
+              <p className="section-sub">No config files. No YAML. No plugins. safeenv now has 8 commands covering the entire developer lifecycle in v2.</p>
             </div>
           </Reveal>
 
@@ -1103,7 +1523,7 @@ export default function SafeenvPage() {
             {[
               { n: "01", label: "Step 01", title: "Install safeenv", code: "pip install safeenv-tool", note: "Requires Python 3.8+" },
               { n: "02", label: "Step 02", title: "Navigate to your project", code: "cd your-project", note: "Works with any Python project" },
-              { n: "03", label: "Step 03", title: "Run setup — done", code: "python -m safeenv setup", note: "Creates venv + installs everything" },
+              { n: "03", label: "Step 03", title: "Run setup — done", code: "safeenv setup", note: "Creates venv + installs everything" },
             ].map((s, i) => (
               <Reveal key={s.n} delay={i * 90}>
                 <div className="step-card">
@@ -1152,9 +1572,9 @@ export default function SafeenvPage() {
             </h2>
             <p className="cta-sub">Works on Windows, macOS, and Linux. Zero configuration required.</p>
             <div className="hero-actions" style={{ marginBottom: 0 }}>
-              <a href="https://pypi.org/project/safeenv-tool/" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ fontSize: 15, padding: "14px 30px" }}>
-                Install from PyPI
-              </a>
+              <button onClick={() => { setShowDocs(true); setActiveDocSection("start"); }} className="btn-primary" style={{ fontSize: 15, padding: "14px 30px", border: "none", cursor: "pointer" }}>
+                Interactive v2 Docs
+              </button>
               <a href="https://github.com/cosmickdd/safeenv" target="_blank" rel="noopener noreferrer" className="btn-ghost" style={{ fontSize: 14, padding: "14px 28px" }}>
                 ⭐ Star on GitHub
               </a>
@@ -1187,6 +1607,230 @@ export default function SafeenvPage() {
         </div>
         <span className="footer-copy">Built with ❤️ by cosmickdd</span>
       </footer>
+
+      {/* ── v0.2.0 FULL INTERACTIVE DOCUMENTATION SLIDE-OVER OVERLAY ── */}
+      {showDocs && (
+        <div className="docs-overlay" style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 1000,
+          background: "rgba(6,6,8,0.98)",
+          backdropFilter: "blur(24px)",
+          display: "flex",
+          flexDirection: "column",
+          color: "#eeeef2",
+          fontFamily: "var(--sans)",
+          animation: "fadeUp 0.35s cubic-bezier(0.16,1,0.3,1) forwards"
+        }}>
+          {/* Docs Header */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "20px 40px",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            background: "rgba(10,10,12,0.6)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <button 
+                onClick={() => setShowDocs(false)} 
+                style={{
+                  background: "none",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 8,
+                  padding: "8px 14px",
+                  color: "rgba(255,255,255,0.6)",
+                  fontSize: 13,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  transition: "all 0.2s",
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.color = "white"; e.currentTarget.style.borderColor = "rgba(229,53,53,0.3)"; }}
+                onMouseOut={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.6)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                Back
+              </button>
+              <span style={{ color: "rgba(255,255,255,0.15)" }}>/</span>
+              <div className="nav-brand" style={{ position: "static", transform: "none" }}>
+                <div className="nav-mark" style={{ width: 22, height: 22 }}>
+                  <svg width="18" height="20" viewBox="0 0 26 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M13 1L2 5.5V13.5C2 19.5 6.9 25.1 13 27C19.1 25.1 24 19.5 24 13.5V5.5L13 1Z" fill="#e53535" fillOpacity="0.15" stroke="#e53535" strokeWidth="1.5" strokeLinejoin="round"/>
+                    <rect x="9" y="11.5" width="8" height="6" rx="1" stroke="#e53535" strokeWidth="1.4" fill="none"/>
+                    <path d="M10.5 11.5V9.5C10.5 8.12 11.62 7 13 7C14.38 7 15.5 8.12 15.5 9.5V11.5" stroke="#e53535" strokeWidth="1.4" strokeLinecap="round"/>
+                    <circle cx="13" cy="14.5" r="1" fill="#e53535"/>
+                  </svg>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>safeenv Docs</span>
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 700, background: "rgba(16,185,129,0.1)", color: "#10b981", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 4, padding: "2px 8px" }}>v0.2.0</span>
+            </div>
+            <div>
+              <a 
+                href="https://pypi.org/project/safeenv-tool/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                style={{
+                  fontSize: 13,
+                  color: "white",
+                  background: "var(--accent)",
+                  padding: "8px 16px",
+                  borderRadius: 8,
+                  textDecoration: "none",
+                  fontWeight: 600,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  transition: "all 0.2s",
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = "#f04040"}
+                onMouseOut={(e) => e.currentTarget.style.background = "var(--accent)"}
+              >
+                View on PyPI
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </a>
+            </div>
+          </div>
+
+          {/* Docs Frame */}
+          <div style={{
+            display: "flex",
+            flex: 1,
+            overflow: "hidden",
+          }}>
+            {/* Sidebar */}
+            <div style={{
+              width: 280,
+              borderRight: "1px solid rgba(255,255,255,0.06)",
+              background: "rgba(10,10,12,0.35)",
+              padding: "30px 20px",
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+              gap: 28,
+            }}>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--accent)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 12 }}>Getting Started</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {[
+                    { id: "start", label: "Quick Start" },
+                    { id: "why-v2", label: "Why safeenv?" }
+                  ].map(item => (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveDocSection(item.id)}
+                      style={{
+                        background: activeDocSection === item.id ? "rgba(255,255,255,0.05)" : "none",
+                        border: "none",
+                        borderRadius: 8,
+                        padding: "8px 12px",
+                        color: activeDocSection === item.id ? "white" : "rgba(255,255,255,0.5)",
+                        fontSize: 13.5,
+                        fontWeight: activeDocSection === item.id ? 600 : 400,
+                        textAlign: "left",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                      }}
+                      onMouseOver={(e) => { if (activeDocSection !== item.id) e.currentTarget.style.color = "white"; }}
+                      onMouseOut={(e) => { if (activeDocSection !== item.id) e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--accent)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 12 }}>What&apos;s New in v2.0</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {[
+                    { id: "v2-overview", label: "Overview Highlights" },
+                    { id: "v2-pinning", label: "Version Pinning" },
+                    { id: "v2-env-vars", label: "Env Var Scanning" },
+                    { id: "v2-runner", label: "No-Activation Runner" }
+                  ].map(item => (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveDocSection(item.id)}
+                      style={{
+                        background: activeDocSection === item.id ? "rgba(255,255,255,0.05)" : "none",
+                        border: "none",
+                        borderRadius: 8,
+                        padding: "8px 12px",
+                        color: activeDocSection === item.id ? "white" : "rgba(255,255,255,0.5)",
+                        fontSize: 13.5,
+                        fontWeight: activeDocSection === item.id ? 600 : 400,
+                        textAlign: "left",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                      }}
+                      onMouseOver={(e) => { if (activeDocSection !== item.id) e.currentTarget.style.color = "white"; }}
+                      onMouseOut={(e) => { if (activeDocSection !== item.id) e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--accent)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 12 }}>Command Reference</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {[
+                    { id: "cmd-init", label: "safeenv init" },
+                    { id: "cmd-run", label: "safeenv run (New)" },
+                    { id: "cmd-setup", label: "safeenv setup" },
+                    { id: "cmd-freeze", label: "safeenv freeze" },
+                    { id: "cmd-scan", label: "safeenv scan (New)" },
+                    { id: "cmd-doctor", label: "safeenv doctor" },
+                    { id: "cmd-fix", label: "safeenv fix" },
+                    { id: "cmd-clean", label: "safeenv clean (New)" }
+                  ].map(item => (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveDocSection(item.id)}
+                      style={{
+                        background: activeDocSection === item.id ? "rgba(255,255,255,0.05)" : "none",
+                        border: "none",
+                        borderRadius: 8,
+                        padding: "8px 12px",
+                        color: activeDocSection === item.id ? "white" : "rgba(255,255,255,0.5)",
+                        fontSize: 13.5,
+                        fontWeight: activeDocSection === item.id ? 600 : 400,
+                        textAlign: "left",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        transition: "all 0.2s",
+                      }}
+                      onMouseOver={(e) => { if (activeDocSection !== item.id) e.currentTarget.style.color = "white"; }}
+                      onMouseOut={(e) => { if (activeDocSection !== item.id) e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+                    >
+                      <span>{item.label.replace(" (New)", "")}</span>
+                      {item.label.includes("(New)") && (
+                        <span style={{ fontSize: 8, fontWeight: 700, background: "rgba(229,53,53,0.15)", color: "var(--accent)", padding: "1px 6px", borderRadius: 4 }}>NEW</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content Area */}
+            <div style={{
+              flex: 1,
+              padding: "50px 80px",
+              overflowY: "auto",
+              background: "rgba(6,6,8,0.2)",
+            }}>
+              {renderDocContent()}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
