@@ -38,6 +38,37 @@ def tmp_project_with_requirements(tmp_path: Path) -> Path:
     return tmp_path
 
 
+@pytest.fixture()
+def tmp_project_with_env_vars(tmp_path: Path) -> Path:
+    """Temporary project with code that uses environment variables."""
+    code = (
+        "import os\n"
+        "\n"
+        "db_url = os.environ['DATABASE_URL']\n"
+        "secret = os.getenv('SECRET_KEY')\n"
+        "debug = os.environ.get('DEBUG', 'false')\n"
+    )
+    (tmp_path / "config.py").write_text(code, encoding="utf-8")
+    return tmp_path
+
+
+@pytest.fixture()
+def tmp_project_with_env_example(tmp_path: Path) -> Path:
+    """Temporary project with .env.example but no .env file."""
+    example = "DATABASE_URL=\nSECRET_KEY=\nDEBUG=\n"
+    (tmp_path / ".env.example").write_text(example, encoding="utf-8")
+    return tmp_path
+
+
+@pytest.fixture()
+def tmp_project_healthy(tmp_path: Path) -> Path:
+    """Temporary project that passes all doctor checks."""
+    (tmp_path / ".venv").mkdir()
+    (tmp_path / "requirements.txt").write_text("", encoding="utf-8")
+    (tmp_path / ".gitignore").write_text(".venv/\n__pycache__/\n", encoding="utf-8")
+    return tmp_path
+
+
 @pytest.fixture(scope="session")
 def real_venv_root(tmp_path_factory) -> Path:
     """Create one real .venv per session — shared by tests that need an actual Python binary."""

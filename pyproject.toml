@@ -6,8 +6,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "safeenv-tool"
-version = "0.1.2"
-description = "One-command Python environment setup — auto-detects imports, creates .venv, and installs packages"
+version = "0.2.0"
+description = "One-command Python environment setup — auto-detects imports, creates .venv, installs packages, scans for env vars, and runs scripts without activation"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.8"
@@ -20,6 +20,9 @@ keywords = [
     "developer-tools",
     "beginner",
     "education",
+    "venv",
+    "requirements",
+    "dotenv",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -33,6 +36,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Utilities",
 ]
@@ -54,6 +58,7 @@ dev = [
 Homepage   = "https://github.com/safeenv/safeenv"
 Repository = "https://github.com/safeenv/safeenv"
 Issues     = "https://github.com/safeenv/safeenv/issues"
+Changelog  = "https://github.com/safeenv/safeenv/blob/main/CHANGELOG.md"
 
 # ── CLI entry point ───────────────────────────────────────────────────────────
 # After `pip install -e .` the `safeenv` command resolves to cli.main().

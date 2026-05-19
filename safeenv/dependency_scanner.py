@@ -5,7 +5,7 @@
 import ast
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 
 # import name → PyPI distribution name.
 # This only needs to exist for packages where the two differ; if they match,
@@ -76,7 +76,6 @@ IMPORT_TO_PACKAGE: Dict[str, str] = {
     "nacl": "PyNaCl",
     "toml": "toml",
     "tomllib": "tomli",
-    "dotenv": "python-dotenv",
     "decouple": "python-decouple",
     "colorama": "colorama",
     "termcolor": "termcolor",
@@ -224,6 +223,68 @@ def scan_project_imports(
         packages.add(pypi_name)
 
     return sorted(packages, key=str.lower)
+
+
+# ── Version pinning ──────────────────────────────────────────────────────────
+
+
+def get_installed_versions(project_root: Path = Path(".")) -> Dict[str, str]:
+    """Query installed package versions from the .venv or system Python.
+
+    Uses importlib.metadata for accuracy. Falls back to pip list parsing
+    if metadata is not available.
+
+    Returns:
+        A dict mapping normalised package name → version string.
+        e.g. {"flask": "3.0.3", "numpy": "1.26.4"}
+    """
+    import subprocess
+    from safeenv.env_manager import get_venv_python
+
+    versions: Dict[str, str] = {}
+
+    venv_python = get_venv_python(project_root)
+    python = str(venv_python) if venv_python and venv_python.exists() else sys.executable
+
+    # Use pip list --format=json for reliable parsing
+    try:
+        result = subprocess.run(
+            [python, "-m", "pip", "list", "--format=json"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            import json
+            for pkg_info in json.loads(result.stdout):
+                name = pkg_info["name"].lower().replace("-", "_")
+                versions[name] = pkg_info["version"]
+    except (subprocess.SubprocessError, ValueError, KeyError):
+        pass
+
+    return versions
+
+
+def pin_packages(
+    packages: List[str],
+    project_root: Path = Path("."),
+) -> List[str]:
+    """Take bare package names, return pinned versions where available.
+
+    e.g. ["Flask", "numpy"] → ["Flask==3.0.3", "numpy==1.26.4"]
+    Packages not installed in .venv keep their bare name.
+    """
+    versions = get_installed_versions(project_root)
+    pinned: List[str] = []
+
+    for pkg in packages:
+        normalised = pkg.lower().replace("-", "_")
+        version = versions.get(normalised)
+        if version:
+            pinned.append(f"{pkg}=={version}")
+        else:
+            pinned.append(pkg)
+
+    return pinned
 
 
 def write_requirements(

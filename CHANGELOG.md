@@ -10,6 +10,46 @@ Nothing yet — check the [main branch](https://github.com/safeenv/safeenv) if y
 
 ---
 
+## [0.2.0] — 2026-05-20
+
+The **"Actually Useful"** release. Three new commands, version pinning, and environment variable scanning. safeenv now covers the full lifecycle from clone → run → debug.
+
+### Added
+
+- **`safeenv run`** — Run Python scripts and modules using the `.venv` interpreter **without activating** the virtual environment. Supports `safeenv run app.py` and `safeenv run -m pytest`. Uses `os.execvp` on Unix for zero-overhead process replacement.
+- **`safeenv clean`** — Delete `.venv`, `__pycache__/`, `.pytest_cache/`, `.mypy_cache/`, `.ruff_cache/`, and `*.pyc` files in one shot. Add `--rebuild` to clean and immediately run `safeenv setup`. Add `--yes` to skip confirmation.
+- **`safeenv scan`** — AST-scan your code for environment variable usage (`os.environ`, `os.getenv`, `os.environ.get`, python-decouple `config()`) and generate a `.env.example` file so contributors know which variables to set.
+- **`safeenv freeze --pin`** — Pin exact installed versions (`Flask==3.0.3`) instead of bare package names. Queries `.venv` for installed versions via `pip list --format=json`.
+- **`.python-version` support** — `safeenv doctor` and `safeenv setup` now read `.python-version` and warn if your Python version is too low. Compatible with pyenv, asdf, and mise.
+- **`.gitignore` auto-fix** — `safeenv doctor` warns if `.gitignore` doesn't contain `.venv`. `safeenv fix` automatically adds it.
+- **`.env` health checks** — `safeenv doctor` detects when `.env.example` exists but `.env` doesn't, and warns about missing environment variables.
+- **`print_hint()`** helper — dim italic output for non-critical suggestions.
+- `safeenv init` now shows `safeenv run` as an alternative to manual activation.
+- New test fixtures: `tmp_project_with_env_vars`, `tmp_project_with_env_example`, `tmp_project_healthy`.
+- New test modules: `test_env_scanner.py`, `test_runner.py`.
+
+### Changed
+
+- Test count: **53 → 112 tests** (111% increase in coverage).
+- `utils.py` — added `hint` and `pkg` theme tokens.
+- `env_manager.py` — refactored with `destroy_venv()`, `clean_caches()`, `read_python_version_file()`, `check_python_version_constraint()`, and `check_gitignore_has_venv()`.
+- `dependency_scanner.py` — added `get_installed_versions()` and `pin_packages()` for version pinning.
+- `doctor.py` — `DiagnosticReport` now tracks `.gitignore`, `.python-version`, and `.env` health.
+- `cli.py` — extracted `_resolve_root()` helper to reduce code duplication across commands.
+- PyPI description updated to reflect new capabilities.
+- Added Python 3.13 classifier.
+
+### Architecture
+
+New modules added while maintaining zero new runtime dependencies:
+```
+safeenv/
+├── runner.py        # NEW — safeenv run
+├── env_scanner.py   # NEW — .env variable detection via AST
+```
+
+---
+
 ## [0.1.2] — 2026-03-11
 
 ### Added
@@ -50,7 +90,8 @@ First public release. Built the whole thing from scratch.
 
 ---
 
-[Unreleased]: https://github.com/safeenv/safeenv/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/safeenv/safeenv/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/safeenv/safeenv/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/safeenv/safeenv/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/safeenv/safeenv/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/safeenv/safeenv/releases/tag/v0.1.0

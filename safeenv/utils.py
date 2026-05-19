@@ -15,6 +15,8 @@ _THEME = Theme(
         "info": "bold cyan",
         "muted": "dim white",
         "header": "bold white",
+        "hint": "dim italic",
+        "pkg": "bold magenta",
     }
 )
 
@@ -42,6 +44,11 @@ def print_header(title: str) -> None:
     console.print(f"\n[header]{bar}[/header]")
     console.print(f"[header]  {title}[/header]")
     console.print(f"[header]{bar}[/header]\n")
+
+
+def print_hint(message: str) -> None:
+    """Print a dim, non-critical suggestion."""
+    console.print(f"[hint]     {message}[/hint]")
 
 
 def is_windows() -> bool:

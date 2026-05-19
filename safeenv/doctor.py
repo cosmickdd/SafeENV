@@ -3,9 +3,15 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Tuple
+from typing import Dict, List, Optional, Tuple
 
-from safeenv.env_manager import detect_python_version, venv_exists
+from safeenv.env_manager import (
+    check_gitignore_has_venv,
+    check_python_version_constraint,
+    detect_python_version,
+    read_python_version_file,
+    venv_exists,
+)
 from safeenv.installer import get_missing_packages, read_requirements
 
 # Minimum Python version safeenv considers "compatible".
@@ -22,6 +28,15 @@ class DiagnosticReport:
     requirements_found: bool = False
     missing_packages: List[str] = field(default_factory=list)
 
+    # v0.2 additions
+    gitignore_has_venv: bool = True  # default True so it's not an issue when unchecked
+    python_version_constraint: Optional[str] = None  # error message if mismatch
+    required_python_version: Optional[str] = None  # contents of .python-version
+    env_example_exists: bool = False
+    env_file_exists: bool = False
+    missing_env_vars: List[str] = field(default_factory=list)
+    detected_env_vars: List[str] = field(default_factory=list)
+
     @property
     def has_issues(self) -> bool:
         return (
@@ -29,6 +44,10 @@ class DiagnosticReport:
             or not self.venv_found
             or not self.requirements_found
             or bool(self.missing_packages)
+            or not self.gitignore_has_venv
+            or self.python_version_constraint is not None
+            or bool(self.missing_env_vars)
+            or (self.env_example_exists and not self.env_file_exists)
         )
 
     @property
@@ -41,6 +60,13 @@ class DiagnosticReport:
         if not self.requirements_found:
             count += 1
         count += len(self.missing_packages)
+        if not self.gitignore_has_venv:
+            count += 1
+        if self.python_version_constraint is not None:
+            count += 1
+        if self.env_example_exists and not self.env_file_exists:
+            count += 1
+        count += len(self.missing_env_vars)
         return count
 
 
@@ -60,5 +86,29 @@ def run_diagnostics(project_root: Path = Path(".")) -> DiagnosticReport:
     if report.requirements_found:
         required = read_requirements(req_path)
         report.missing_packages = get_missing_packages(required, project_root)
+
+    # v0.2: .gitignore check
+    gitignore_path = project_root / ".gitignore"
+    if gitignore_path.exists():
+        report.gitignore_has_venv = check_gitignore_has_venv(project_root)
+    else:
+        # No gitignore at all — flag as an issue only if .venv exists
+        report.gitignore_has_venv = not report.venv_found
+
+    # v0.2: .python-version check
+    report.required_python_version = read_python_version_file(project_root)
+    report.python_version_constraint = check_python_version_constraint(project_root)
+
+    # v0.2: .env health check
+    try:
+        from safeenv.env_scanner import check_env_health
+        env_health = check_env_health(project_root)
+        report.env_example_exists = env_health["env_example_exists"]  # type: ignore
+        report.env_file_exists = env_health["env_file_exists"]  # type: ignore
+        report.missing_env_vars = env_health["missing_vars"]  # type: ignore
+        report.detected_env_vars = env_health["detected_vars"]  # type: ignore
+    except Exception:
+        # If env scanning fails, don't break the whole doctor
+        pass
 
     return report
