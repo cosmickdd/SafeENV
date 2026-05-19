@@ -6,8 +6,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "safeenv-tool"
-version = "0.2.0"
-description = "One-command Python environment setup — auto-detects imports, creates .venv, installs packages, scans for env vars, and runs scripts without activation"
+version = "0.2.1"
+description = "One-command Python environment setup - auto-detects imports, creates .venv, installs packages, scans for env vars, and runs scripts without activation"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.8"

@@ -27,7 +27,7 @@ from safeenv.utils import (
 
 app = typer.Typer(
     name="safeenv",
-    help="🛡  Automatic Python environment manager for students and developers.",
+    help="Automatic Python environment manager for students and developers.",
     add_completion=False,
     rich_markup_mode="rich",
     no_args_is_help=True,
@@ -57,7 +57,7 @@ def _callback(
         help="Show safeenv version and exit.",
     ),
 ) -> None:
-    """🛡  safeenv — Automatic Python environment manager."""
+    """safeenv — Automatic Python environment manager."""
 
 
 
@@ -540,7 +540,7 @@ def run(
         show_default=False,
     ),
 ) -> None:
-    """Run a script or module using the [bold].venv[/bold] interpreter — no activation needed."""
+    """Run a script or module using the [bold].venv[/bold] interpreter - no activation needed."""
     from safeenv.runner import run_script, run_module, is_using_venv
 
     root = _resolve_root(project_dir)
@@ -561,7 +561,7 @@ def run(
     if is_using_venv(root):
         print_info(f"Using [bold].venv[/bold] interpreter")
     else:
-        print_warning("No .venv found — using system Python")
+        print_warning("No .venv found - using system Python")
 
     if module:
         exit_code = run_module(target, args, root)
