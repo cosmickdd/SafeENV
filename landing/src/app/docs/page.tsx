@@ -25,9 +25,10 @@ const DOCS_CSS = `
     background-color: var(--bg-dark);
     color: var(--text-primary);
     font-family: var(--sans);
-    min-height: 100vh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
   .docs-header {
