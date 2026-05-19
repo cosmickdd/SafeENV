@@ -217,7 +217,7 @@ export const Html = ({
             >
               <span className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#e53535] bg-[#e53535]/10 border border-[#e53535]/20 rounded-full px-4 py-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#e53535]" />
-                v0.1.2 — Open Source
+                v0.2.1 — Open Source
               </span>
             </div>
 
